@@ -1,0 +1,31 @@
+# Environment variables and secrets
+.env
+.env.*
+!.env.example
+
+# Java / Spring Boot
+target/
+*.class
+
+# React / Node.js
+node_modules/
+dist/
+
+# IDE files
+.vscode/
+.idea/
+
+# Logs
+*.log
+
+# Operating system files
+.DS_Store
+Thumbs.db
+# Maven generated files and IDE state
+**/target/
+**/.idea/
+.vscode/
+*.timestamp-*.mjs
+
+# Debug output
+debug-*.log

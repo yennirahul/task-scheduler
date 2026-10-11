@@ -1,0 +1,57 @@
+syntax = "proto3";
+
+package com.example.scheduler.grpc;
+
+option java_multiple_files = true;
+option java_package = "com.example.scheduler.grpc";
+option java_outer_classname = "WorkerProto";
+
+service WorkerGrpcService {
+  rpc RegisterWorker (RegisterWorkerRequest) returns (RegisterWorkerResponse);
+  rpc SendHeartbeat (HeartbeatRequest) returns (HeartbeatResponse);
+  rpc DispatchTask (TaskDispatchParam) returns (TaskDispatchResponse);
+}
+
+message RegisterWorkerRequest {
+  string workerId = 1;
+  string hostname = 2;
+  int32 port = 3;
+  int32 maxConcurrentTasks = 4;
+  repeated string supportedTaskTypes = 5;
+}
+
+message RegisterWorkerResponse {
+  bool success = 1;
+  string message = 2;
+  int64 heartbeatIntervalSeconds = 3;
+}
+
+message HeartbeatRequest {
+  string workerId = 1;
+  double cpuUsage = 2;
+  double memoryUsageMB = 3;
+  int32 activeTasksCount = 4;
+}
+
+message HeartbeatResponse {
+  bool acknowledged = 1;
+  string command = 2; // e.g. "NONE", "SHUTDOWN"
+}
+
+message TaskDispatchParam {
+  string executionId = 1;
+  string jobId = 2;
+  string taskType = 3;
+  string taskData = 4;
+  int32 timeoutSeconds = 5;
+  int32 attemptNumber = 6;
+}
+
+message TaskDispatchResponse {
+  bool accepted = 1;
+  string executionId = 2;
+  string message = 3;
+  string status = 4; // "COMPLETED", "FAILED", "RUNNING"
+  string result = 5;
+  string errorDetails = 6;
+}

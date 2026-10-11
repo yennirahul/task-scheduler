@@ -1,0 +1,68 @@
+version: '3.8'
+
+services:
+  mysql:
+    image: mysql:8.0.36
+    container_name: scheduler-mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD:?Set DB_PASSWORD in .env}
+      MYSQL_DATABASE: ${DB_NAME:-distributed_scheduler}
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  coordinator:
+    build:
+      context: .
+      dockerfile: backend/coordinator/Dockerfile
+    container_name: scheduler-coordinator
+    environment:
+      DB_URL: "jdbc:mysql://mysql:3306/${DB_NAME:-distributed_scheduler}?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC"
+      DB_USERNAME: ${DB_USERNAME:-root}
+      DB_PASSWORD: ${DB_PASSWORD:?Set DB_PASSWORD in .env}
+      JWT_SECRET: ${JWT_SECRET:?Set JWT_SECRET in .env}
+      PORT: 8080
+      GRPC_PORT: 9090
+    ports:
+      - "8080:8080"
+      - "9090:9090"
+    depends_on:
+      mysql:
+        condition: service_healthy
+
+  worker-1:
+    build:
+      context: .
+      dockerfile: backend/worker/Dockerfile
+    container_name: scheduler-worker-1
+    environment:
+      COORDINATOR_HOST: coordinator
+      COORDINATOR_GRPC_PORT: 9090
+      WORKER_ID: worker-node-1
+      WORKER_HOSTNAME: worker-1
+      WORKER_PORT: 9091
+    depends_on:
+      - coordinator
+
+  worker-2:
+    build:
+      context: .
+      dockerfile: backend/worker/Dockerfile
+    container_name: scheduler-worker-2
+    environment:
+      COORDINATOR_HOST: coordinator
+      COORDINATOR_GRPC_PORT: 9090
+      WORKER_ID: worker-node-2
+      WORKER_HOSTNAME: worker-2
+      WORKER_PORT: 9092
+    depends_on:
+      - coordinator
+
+volumes:
+  mysql_data:
